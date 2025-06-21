@@ -7,19 +7,19 @@ import (
 )
 
 type Config struct {
-	ServerPort string
-	LLMAPIKey     string
-	LLMModel      string
-	LLMMaxTokens  int
-	LLMAPIBaseURL string
+	ServerPort       string
+	LLMAPIKey        string
+	LLMModel         string
+	LLMMaxTokens     int
+	LLMAPIBaseURL    string
 	BrowserTimeout   int
 	CloudflareWaitMS int
-	ProxyList []string
-	UserAgents []string
+	ProxyList        []string
+	UserAgents       []string
 }
 
 func NewConfig() *Config {
-	
+
 	parseInt := func(str string, defaultVal int) int {
 		if str == "" {
 			return defaultVal

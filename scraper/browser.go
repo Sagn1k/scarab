@@ -15,9 +15,9 @@ import (
 )
 
 type RenderOptions struct {
-	WaitTime    int
-	Selectors   []string
-	BypassCF    bool
+	WaitTime  int
+	Selectors []string
+	BypassCF  bool
 }
 
 type BrowserRenderer struct {
@@ -51,13 +51,13 @@ func (r *BrowserRenderer) initBrowser(ctx context.Context) error {
 	// }
 
 	browserURL := l.MustLaunch()
-	
+
 	browser := rod.New().Context(ctx).ControlURL(browserURL)
 	err := browser.Connect()
 	if err != nil {
 		return fmt.Errorf("failed to connect to browser: %w", err)
 	}
-	
+
 	r.browser = browser
 	return nil
 }
@@ -69,11 +69,11 @@ func (r *BrowserRenderer) RenderPage(ctx context.Context, url string, options *R
 
 	timeoutDuration := time.Duration(r.config.BrowserTimeout) * time.Second
 	if options != nil && options.BypassCF {
-		timeoutDuration = time.Duration(r.config.BrowserTimeout * 2) * time.Second
+		timeoutDuration = time.Duration(r.config.BrowserTimeout*2) * time.Second
 	}
 	_, cancel := context.WithTimeout(ctx, timeoutDuration)
 	defer cancel()
-	
+
 	page, err := r.browser.Page(proto.TargetCreateTarget{URL: "about:blank"})
 	if err != nil {
 		return "", fmt.Errorf("failed to create page: %w", err)
@@ -170,9 +170,9 @@ func (r *BrowserRenderer) RenderPage(ctx context.Context, url string, options *R
 		for _, btn := range buttons {
 			if txt, err := btn.Text(); err == nil {
 				txtLower := strings.ToLower(txt)
-				if strings.Contains(txtLower, "accept") || 
-				   strings.Contains(txtLower, "continue") || 
-				   strings.Contains(txtLower, "agree") {
+				if strings.Contains(txtLower, "accept") ||
+					strings.Contains(txtLower, "continue") ||
+					strings.Contains(txtLower, "agree") {
 					btn.Click(proto.InputMouseButtonLeft, 1)
 					time.Sleep(500 * time.Millisecond)
 					break
@@ -201,13 +201,13 @@ func (r *BrowserRenderer) RenderPage(ctx context.Context, url string, options *R
 		}
 		time.Sleep(time.Second)
 	}
-	
+
 	if htmlErr != nil {
 		return "", fmt.Errorf("failed to get HTML after multiple attempts: %w", htmlErr)
 	}
 
-	if (strings.Contains(html, "Just a moment") || strings.Contains(html, "checking your browser")) && 
-	   strings.Contains(strings.ToLower(html), "cloudflare") {
+	if (strings.Contains(html, "Just a moment") || strings.Contains(html, "checking your browser")) &&
+		strings.Contains(strings.ToLower(html), "cloudflare") {
 		fmt.Println("Warning: Still on Cloudflare challenge page after bypass attempt")
 	}
 
@@ -216,16 +216,16 @@ func (r *BrowserRenderer) RenderPage(ctx context.Context, url string, options *R
 
 func (r *BrowserRenderer) handleCloudflare(page *rod.Page, maxWaitTime int) error {
 	isCloudflare := false
-	
+
 	_ = rod.Try(func() {
 		bodyElem, err := page.Element("body")
 		if err == nil {
 			text, textErr := bodyElem.Text()
-			if textErr == nil && 
-			   (strings.Contains(strings.ToLower(text), "cloudflare") || 
-				strings.Contains(text, "Just a moment...") ||
-				strings.Contains(text, "Checking your browser") ||
-				strings.Contains(text, "verify you are human")) {
+			if textErr == nil &&
+				(strings.Contains(strings.ToLower(text), "cloudflare") ||
+					strings.Contains(text, "Just a moment...") ||
+					strings.Contains(text, "Checking your browser") ||
+					strings.Contains(text, "verify you are human")) {
 				isCloudflare = true
 			}
 		}
@@ -234,46 +234,46 @@ func (r *BrowserRenderer) handleCloudflare(page *rod.Page, maxWaitTime int) erro
 	if !isCloudflare {
 		return nil
 	}
-	
+
 	fmt.Println("Detected Cloudflare challenge, attempting to solve...")
 
 	time.Sleep(3 * time.Second)
-	
+
 	checkboxSelectors := []string{
 		"input[type=checkbox]",
 		".recaptcha-checkbox",
 		"#checkbox",
 		"#recaptcha-anchor",
 		"#cf-checkbox",
-		"[role=checkbox]", 
+		"[role=checkbox]",
 		"div.checkbox",
 		"span.checkbox",
 		"iframe[src*='cloudflare']",
 	}
-	
+
 	var iframeHandled bool
 	_ = rod.Try(func() {
 		iframes := page.MustElements("iframe")
 		for _, iframe := range iframes {
 			src, err := iframe.Attribute("src")
-			if err == nil && src != nil && 
-			   (strings.Contains(*src, "cloudflare") || 
-				strings.Contains(*src, "recaptcha") || 
-				strings.Contains(*src, "captcha") || 
-				strings.Contains(*src, "challenge")) {
-				
+			if err == nil && src != nil &&
+				(strings.Contains(*src, "cloudflare") ||
+					strings.Contains(*src, "recaptcha") ||
+					strings.Contains(*src, "captcha") ||
+					strings.Contains(*src, "challenge")) {
+
 				frameObj := iframe.MustFrame()
-				
+
 				for _, selector := range checkboxSelectors {
 					err := rod.Try(func() {
 						checkbox := frameObj.MustElement(selector)
-						
+
 						checkbox.Hover()
 						time.Sleep(time.Duration(300+rand.Intn(500)) * time.Millisecond)
-						
+
 						checkbox.Click(proto.InputMouseButtonLeft, 1)
 						fmt.Println("Clicked checkbox in iframe!")
-						
+
 						time.Sleep(time.Duration(2000+rand.Intn(1000)) * time.Millisecond)
 						iframeHandled = true
 					})
@@ -281,7 +281,7 @@ func (r *BrowserRenderer) handleCloudflare(page *rod.Page, maxWaitTime int) erro
 						break
 					}
 				}
-				
+
 				if iframeHandled {
 					break
 				}
@@ -293,18 +293,18 @@ func (r *BrowserRenderer) handleCloudflare(page *rod.Page, maxWaitTime int) erro
 		for _, selector := range checkboxSelectors {
 			err := rod.Try(func() {
 				checkbox := page.MustElement(selector)
-				
+
 				if checkbox.MustVisible() {
 					checkbox.Hover()
 					time.Sleep(time.Duration(200+rand.Intn(300)) * time.Millisecond)
-					
+
 					checkbox.Click(proto.InputMouseButtonLeft, 1)
 					fmt.Println("Clicked checkbox on main page!")
-					
+
 					time.Sleep(time.Duration(2000+rand.Intn(1000)) * time.Millisecond)
 				}
 			})
-			
+
 			if err == nil {
 				break
 			}
@@ -315,10 +315,10 @@ func (r *BrowserRenderer) handleCloudflare(page *rod.Page, maxWaitTime int) erro
 		for _, btn := range buttons {
 			if txt, err := btn.Text(); err == nil {
 				txtLower := strings.ToLower(txt)
-				if strings.Contains(txtLower, "verify") || 
-				   strings.Contains(txtLower, "continue") || 
-				   strings.Contains(txtLower, "submit") ||
-				   strings.Contains(txtLower, "i'm human") {
+				if strings.Contains(txtLower, "verify") ||
+					strings.Contains(txtLower, "continue") ||
+					strings.Contains(txtLower, "submit") ||
+					strings.Contains(txtLower, "i'm human") {
 					btn.Click(proto.InputMouseButtonLeft, 1)
 					fmt.Println("Clicked verification button!")
 					time.Sleep(2 * time.Second)
@@ -327,12 +327,12 @@ func (r *BrowserRenderer) handleCloudflare(page *rod.Page, maxWaitTime int) erro
 			}
 		}
 	})
-	
+
 	_ = rod.Try(func() {
 		page.Keyboard.Press(input.Enter)
 		time.Sleep(time.Second)
 	})
-	
+
 	fmt.Println("Waiting for Cloudflare verification to complete...")
 	waitDuration := time.Duration(maxWaitTime) * time.Millisecond
 	if waitDuration < 10*time.Second {
@@ -346,11 +346,11 @@ func (r *BrowserRenderer) handleCloudflare(page *rod.Page, maxWaitTime int) erro
 		if err == nil {
 			text, textErr := bodyElem.Text()
 			if textErr == nil {
-				if (strings.Contains(strings.ToLower(text), "cloudflare") && 
-				   strings.Contains(text, "Just a moment...")) {
+				if strings.Contains(strings.ToLower(text), "cloudflare") &&
+					strings.Contains(text, "Just a moment...") {
 					stillOnCloudflare = true
 				}
-				
+
 				if strings.Contains(text, "Just a moment...") {
 					stillOnCloudflare = true
 				}

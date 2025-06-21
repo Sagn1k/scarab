@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
-	"errors"
-	
+
 	"github.com/Sagn1k/scarab/config"
 )
 
@@ -42,9 +42,9 @@ type OpenAIResponse struct {
 	Object  string `json:"object"`
 	Created int64  `json:"created"`
 	Choices []struct {
-		Index        int      `json:"index"`
-		Message      Message  `json:"message"`
-		FinishReason string   `json:"finish_reason"`
+		Index        int     `json:"index"`
+		Message      Message `json:"message"`
+		FinishReason string  `json:"finish_reason"`
 	} `json:"choices"`
 }
 
@@ -52,7 +52,7 @@ func (c *Client) HTMLToMarkdown(ctx context.Context, html string, url string) (s
 	if len(html) > 100000 {
 		html = html[:100000] + "..."
 	}
-	
+
 	systemPrompt := fmt.Sprintf(`You are an expert web content extractor. 
 Your task is to analyze the given HTML content from the URL: %s
 and convert it to clean, well-formatted markdown. 

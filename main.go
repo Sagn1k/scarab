@@ -3,9 +3,9 @@ package main
 import (
 	"log"
 
-	"github.com/joho/godotenv"
 	"github.com/Sagn1k/scarab/api"
 	"github.com/Sagn1k/scarab/config"
+	"github.com/joho/godotenv"
 )
 
 func main() {
